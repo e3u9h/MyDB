@@ -67,10 +67,13 @@ private:
 	unordered_map<string, shared_ptr<MyDB_Page>> pageIndex; // table_name:pos -> page
 	vector<shared_ptr<MyDB_Page>> bufferSlots;				// buffer slot -> Page
 
-	// lookup table for file descriptors
-	unordered_map<string, int> fileDescriptors; // filename -> fd
+	// double linked list for LRU management
+	shared_ptr<MyDB_Page> lruHead; // most recently used page (head)
+	shared_ptr<MyDB_Page> lruTail; // least recently used page (tail)
 
-	int lruCounter;
+	// file descriptors keyed by filename
+	unordered_map<string, int> fileDescriptors;
+
 	MyDB_PageHandle getPageInternal(MyDB_TablePtr whichTable, long pos, bool isPinned);
 	string makePageKey(MyDB_TablePtr table, long pos);
 
@@ -78,6 +81,11 @@ private:
 	void writePageToDisk(int slotIndex);
 
 	int getFileDescriptor(const string &filename);
+
+	// LRU double linked list operations
+	void addToHead(shared_ptr<MyDB_Page> page);
+	void removeFromLRU(shared_ptr<MyDB_Page> page);
+	void moveToHead(shared_ptr<MyDB_Page> page);
 };
 
 #endif

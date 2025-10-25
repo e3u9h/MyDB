@@ -80,7 +80,8 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
 	this->pageIndex.clear();
 	this->fileDescriptors.clear();
 	this->bufferSlots = vector<shared_ptr<MyDB_Page>>(numPages, nullptr);
-	this->lruCounter = 0;
+	this->lruHead = nullptr;
+	this->lruTail = nullptr;
 }
 
 MyDB_BufferManager :: ~MyDB_BufferManager () {
@@ -114,26 +115,28 @@ MyDB_BufferManager :: ~MyDB_BufferManager () {
 }
 
 void MyDB_BufferManager::loadPageFromDisk(int slotIndex, MyDB_TablePtr table, long posInTable) {
-	if (table != nullptr) {
+	char *dst = data + (slotIndex * pageSize);
+	if (table != nullptr)
+	{
 		string filename = table->getStorageLoc();
 		int fd = getFileDescriptor(filename);
 		if (fd >= 0) {
 			lseek(fd, posInTable * pageSize, SEEK_SET);
-			ssize_t bytesRead = read(fd, data + (slotIndex * pageSize), pageSize);
+			ssize_t bytesRead = read(fd, dst, pageSize);
 
 			// error handlings
 			if (bytesRead < 0) {
-				memset(data + (slotIndex * pageSize), 0, pageSize);
+				memset(dst, 0, pageSize);
 			}
 		}
 		else
 		{
-			memset(data + (slotIndex * pageSize), 0, pageSize);
+			memset(dst, 0, pageSize);
 		}
 	}
 	else
 	{
-		memset(data + (slotIndex * pageSize), 0, pageSize);
+		memset(dst, 0, pageSize);
 	}
 }
 
@@ -169,30 +172,33 @@ void *MyDB_BufferManager::getBytes(MyDB_TablePtr whichTable, long posInTable, sh
 
 		// No free slot found, need to evict a page using LRU
 		if (slotIndex < 0) {
-			int victimSlot = -1;
-			int oldestTime = INT_MAX;
+			shared_ptr<MyDB_Page> victimPage = nullptr;
+			shared_ptr<MyDB_Page> current = lruTail;
 
-			// find the unpinned page with the lowest lruCounter
-			for (size_t i = 0; i < numPages; i++) {
-				if (bufferSlots[i] && !bufferSlots[i]->getIsPinned()) {
-					int pageTime = bufferSlots[i]->getLruCounter();
-					if (pageTime < oldestTime) {
-						oldestTime = pageTime;
-						victimSlot = i;
-					}
+			// find the least recently used unpinned page from the tail
+			while (current != nullptr)
+			{
+				if (!current->getIsPinned())
+				{
+					victimPage = current;
+					break;
 				}
+				current = current->lruPrev;
 			}
-			
-			if (victimSlot == -1) {
+
+			if (victimPage == nullptr)
+			{
 				throw runtime_error("No available buffer space - all pages pinned");
 			}
 
 			// write back victim page if dirty
-			auto victimPage = bufferSlots[victimSlot];
-			if (victimPage->getIsDirty() && victimPage->getPosInBuffer() >= 0)
+			int victimSlot = victimPage->getPosInBuffer();
+			if (victimPage->getIsDirty() && victimSlot >= 0)
 			{
 				writePageToDisk(victimSlot);
 			}
+			// remove victim page from the double linked list
+			removeFromLRU(victimPage);
 
 			// mark the victim page as not in buffer
 			victimPage->setPosInBuffer(-1);
@@ -209,8 +215,17 @@ void *MyDB_BufferManager::getBytes(MyDB_TablePtr whichTable, long posInTable, sh
 		loadPageFromDisk(slotIndex, whichTable, posInTable);
 	}
 
-	// set the page's LRU counter to the current value, and increment the global counter to a newer value
-	page->setLruCounter(++lruCounter);
+	// add or update the page to make it the head of list
+	if (page->lruPrev != nullptr || page->lruNext != nullptr || lruHead == page)
+	{
+		// the page is already in LRU list, move it to head
+		moveToHead(page);
+	}
+	else
+	{
+		// not in LRU list, add to head
+		addToHead(page);
+	}
 
 	return data + (slotIndex * pageSize);
 }
@@ -240,6 +255,11 @@ int MyDB_BufferManager::getFileDescriptor(const string &filename)
 void MyDB_BufferManager::releasePage(shared_ptr<MyDB_Page> page)
 {
 	string key = makePageKey(page->getTable(), page->getPosInTable());
+	// remove page from LRU list
+	if (page->lruPrev != nullptr || page->lruNext != nullptr || lruHead == page)
+	{
+		removeFromLRU(page);
+	}
 
 	// if page is in buffer, clear the buffer slot
 	int bufferPos = page->getPosInBuffer();
@@ -250,6 +270,57 @@ void MyDB_BufferManager::releasePage(shared_ptr<MyDB_Page> page)
 
 	// remove from pageIndex. At this point, there should be no other references to this page, so the destructor of the Page will be called automatically.
 	pageIndex.erase(key);
+}
+
+void MyDB_BufferManager::addToHead(shared_ptr<MyDB_Page> page)
+{
+	page->lruNext = lruHead;
+	page->lruPrev = nullptr;
+
+	if (lruHead != nullptr)
+	{
+		lruHead->lruPrev = page;
+	}
+	lruHead = page;
+
+	if (lruTail == nullptr)
+	{
+		lruTail = page;
+	}
+}
+
+void MyDB_BufferManager::removeFromLRU(shared_ptr<MyDB_Page> page)
+{
+	// update neighbors
+	auto prev = page->lruPrev;
+	auto next = page->lruNext;
+
+	if (prev)
+	{
+		prev->lruNext = next;
+	}
+	else
+	{
+		lruHead = next;
+	}
+
+	if (next)
+	{
+		next->lruPrev = prev;
+	}
+	else
+	{
+		lruTail = prev;
+	}
+
+	page->lruPrev = nullptr;
+	page->lruNext = nullptr;
+}
+
+void MyDB_BufferManager::moveToHead(shared_ptr<MyDB_Page> page)
+{
+	removeFromLRU(page);
+	addToHead(page);
 }
 
 #endif

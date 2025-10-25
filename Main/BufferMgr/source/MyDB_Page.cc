@@ -5,7 +5,6 @@
 #include "MyDB_PageHandle.h"
 #include "MyDB_BufferManager.h"
 #include <algorithm>
-#include <iostream>
 
 using namespace std;
 
@@ -22,7 +21,6 @@ void MyDB_Page::unregisterHandle()
     {
         if (bufferMgr == nullptr)
         {
-            cout << "Warning: BufferMgr is nullptr in Page::unregisterHandle()" << endl;
             return;
         }
 
@@ -34,11 +32,6 @@ void MyDB_Page::unregisterHandle()
 
         // if it is an anonymous page, notify BufferManager to recycle the buffer slot
         if (bufferMgr->isTemporaryTable(whichTable))
-        {
-            bufferMgr->releasePage(shared_from_this());
-        }
-        // if it's a regular page that's no longer in buffer, it should also be released
-        else if (posInBuffer < 0)
         {
             bufferMgr->releasePage(shared_from_this());
         }

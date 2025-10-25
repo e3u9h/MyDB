@@ -12,11 +12,11 @@ class MyDB_PageHandleBase;
 class MyDB_Page : public std::enable_shared_from_this<MyDB_Page>
 {
 public:
-	MyDB_Page() : whichTable(nullptr), posInTable(-1), posInBuffer(-1),
+	MyDB_Page() : lruPrev(nullptr), lruNext(nullptr), whichTable(nullptr), posInTable(-1), posInBuffer(-1),
 				  isPinned(false), isDirty(false), referenceCnt(0), lruCounter(-1), bufferMgr(nullptr) {}
 
 	MyDB_Page(MyDB_TablePtr whichTable, long posInTable)
-		: whichTable(whichTable), posInTable(posInTable), posInBuffer(-1),
+		: lruPrev(nullptr), lruNext(nullptr), whichTable(whichTable), posInTable(posInTable), posInBuffer(-1),
 		  isPinned(false), isDirty(false), referenceCnt(0), lruCounter(-1), bufferMgr(nullptr) {}
 
 	// Access and modify page state
@@ -39,6 +39,10 @@ public:
 
 	int getLruCounter() const { return lruCounter; }
 	void setLruCounter(int counter) { lruCounter = counter; }
+
+	// LRU双向链表指针
+	shared_ptr<MyDB_Page> lruPrev;
+	shared_ptr<MyDB_Page> lruNext;
 
 	// increment and decrement reference count for handles
 	void registerHandle();

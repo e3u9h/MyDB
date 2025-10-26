@@ -32,7 +32,7 @@ public:
 	MyDB_RecordPtr getEmptyRecord ();
 
 	// append a record to the table
-	void append (MyDB_RecordPtr appendMe);
+	virtual void append(MyDB_RecordPtr appendMe);
 
 	// return an itrator over this table... each time returnVal->next () is
 	// called, the resulting record will be placed into the record pointed to
@@ -84,6 +84,7 @@ public:
 private:
 
 	// ANYTHING YOU NEED HERE
+	friend class MyDB_BPlusTreeReaderWriter;
 	MyDB_TablePtr myTable;
 	MyDB_BufferManagerPtr myBufferManager;
 };

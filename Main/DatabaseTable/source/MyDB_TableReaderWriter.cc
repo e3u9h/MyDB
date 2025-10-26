@@ -93,7 +93,7 @@ void MyDB_TableReaderWriter :: append (MyDB_RecordPtr appendMe) {
     
     bool success = lastPage.append(appendMe);
     // cout << "DEBUG: append() to page " << getLastPageIndex() << ", success: " << success << endl;
-    
+
     if (!success) {
         // Last page is full, create a new page
         // cout << "33DEBUG: Last page full, creating new page" << endl;

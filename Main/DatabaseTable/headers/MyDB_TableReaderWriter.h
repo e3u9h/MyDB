@@ -6,7 +6,10 @@
 #include "MyDB_BufferManager.h"
 #include "MyDB_Record.h"
 #include "MyDB_RecordIterator.h"
+#include "MyDB_RecordIteratorAlt.h"
 #include "MyDB_Table.h"
+#include <set>
+#include <vector>
 
 // create a smart pointer for the catalog
 using namespace std;
@@ -36,8 +39,23 @@ public:
 	// by iterateIntoMe
 	MyDB_RecordIteratorPtr getIterator (MyDB_RecordPtr iterateIntoMe);
 
+	// gets an instance of an alternate iterator over the table... this is an
+	// iterator that has the alternate getCurrent ()/advance () interface
+	MyDB_RecordIteratorAltPtr getIteratorAlt();
+
+	// gets an instance of an alternate iterator over the page; this iterator
+	// works on a range of pages in the file, and iterates from lowPage through
+	// highPage inclusive
+	MyDB_RecordIteratorAltPtr getIteratorAlt(int lowPage, int highPage);
+
 	// load a text file into this table... overwrites the current contents
-	void loadFromTextFile (string fromMe);
+	// void loadFromTextFile (string fromMe);
+
+	// load a text file into this table... this returns a pair where the first
+	// entry is a list of (approximate) distinct value counts for each of the
+	// attributes in the table, and the second entry is the number of tuples that
+	// have been loaded into the table
+	pair<vector<size_t>, size_t> loadFromTextFile(string fromMe);
 
 	// dump the contents of this table into a text file
 	void writeIntoTextFile (string toMe);
@@ -45,9 +63,23 @@ public:
 	// access the i^th page in this file
 	MyDB_PageReaderWriter operator [] (size_t i);
 
-        // access the last page in the file
-        MyDB_PageReaderWriter last ();
+	// access the i^th page in this file... getting a pinned version of the page
+	MyDB_PageReaderWriter getPinned(size_t i);
 
+	// access the last page in the file
+	MyDB_PageReaderWriter last();
+
+	// get the number of pages in the file
+	int getNumPages();
+
+	// get access to the buffer manager
+	MyDB_BufferManagerPtr getBufferMgr();
+
+	// gets the physical file for this guy
+	string getFileName();
+
+	// gets the table object for this guy
+	MyDB_TablePtr getTable();
 
 private:
 

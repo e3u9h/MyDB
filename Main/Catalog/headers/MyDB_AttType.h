@@ -30,8 +30,6 @@ class MyDB_IntAttType : public MyDB_AttType {
 
 public: 
 	
-	virtual ~MyDB_IntAttType() = default;
-
 	bool promotableToInt () {
 		return true;
 	}
@@ -68,8 +66,6 @@ class MyDB_DoubleAttType : public MyDB_AttType {
 
 public: 
 	
-	virtual ~MyDB_DoubleAttType() = default;
-
 	bool promotableToInt () {
 		return false;
 	}
@@ -105,8 +101,6 @@ class MyDB_StringAttType : public MyDB_AttType {
 
 public: 
 	
-	virtual ~MyDB_StringAttType() = default;
-
 	bool promotableToInt () {
 		return false;
 	}
@@ -142,8 +136,6 @@ class MyDB_BoolAttType : public MyDB_AttType {
 
 public: 
 	
-	virtual ~MyDB_BoolAttType() = default;
-
 	bool promotableToInt () {
 		return false;
 	}

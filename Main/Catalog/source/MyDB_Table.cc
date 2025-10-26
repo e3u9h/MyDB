@@ -109,6 +109,7 @@ int MyDB_Table :: lastPage () {
 }
 
 void MyDB_Table :: setLastPage (size_t toMe) {
+	// cout << "Setting last page to " << toMe << endl;
 	last = (int) toMe;	
 }
 

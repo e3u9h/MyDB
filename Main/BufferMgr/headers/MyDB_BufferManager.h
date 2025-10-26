@@ -8,7 +8,8 @@
 #include <unordered_map>
 
 using namespace std;
-
+class MyDB_BufferManager;
+typedef shared_ptr<MyDB_BufferManager> MyDB_BufferManagerPtr;
 class MyDB_BufferManager {
 
 public:
@@ -53,6 +54,8 @@ public:
 	void *getBytes(MyDB_TablePtr whichTable, long posInTable, shared_ptr<MyDB_Page> page);
 	void releasePage(shared_ptr<MyDB_Page> page);
 	bool isTemporaryTable(MyDB_TablePtr table) const { return table == tempTable; }
+	// returns the page size
+	size_t getPageSize() { return pageSize; }
 
 private:
 

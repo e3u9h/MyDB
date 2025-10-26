@@ -47,6 +47,9 @@ public:
 
 	shared_ptr<MyDB_Page> getPageObject() { return page; }
 
+	// return the buffer manager that owns this page (set by the buffer mgr)
+	MyDB_BufferManager &getParent() { return *bufferMgr; }
+
 private:
 	// YOUR CODE HERE
 	MyDB_BufferManager *bufferMgr;

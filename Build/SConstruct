@@ -4,6 +4,8 @@ from os.path import isfile, join, abspath
 
 common_env = Environment()
 common_env.Append(CXXFLAGS = '-std=c++11 -Wall -g -O0')
+common_env.Append(YACCFLAGS='-d')
+common_env.Append(CFLAGS='-std=c11')
 
 # get the source files for the catalog
 srcDir = '../Main/Catalog/source'
@@ -41,8 +43,10 @@ print("""
 What do you want to build/clean?\n
 1. Buffer unit tests
 2. Record unit tests
-3. Buffer unit tests for Clear (use clang++ compiler)
-4. Record unit tests for Clear (use clang++ compiler)
+3. Sort unit tests
+4. Buffer unit tests for Clear (use clang++ compiler)
+5. Record unit tests for Clear (use clang++ compiler)
+6. Sort unit tests for Clear (use clang++ compiler)
 """)
 
 ans=input("Select the module(s) you want to build or clean. ")
@@ -56,13 +60,21 @@ if ans=="2":
 	common_env.Program ('bin/recordUnitTest', ['../Main/RecordTest/source/RecordQUnit.cc', tableSrc, recordSrc, catalogSrc, bufferSrc])
 
 if ans=="3":
-	print("\nOK, building buffer unit tests using clang++.")
-	common_env.Replace(CXX = "clang++")
-	common_env.Program ('bin/bufferUnitTest', ['../Main/BufferTest/source/BufferQUnit.cc', catalogSrc, recordSrc, bufferSrc])
+	print("\nOK, building sort unit tests.")
+	common_env.Program ('bin/sortUnitTest', ['../Main/SortTest/source/SortQUnit.cc', tableSrc, recordSrc, catalogSrc, bufferSrc])
 
 if ans=="4":
 	print("\nOK, building buffer unit tests using clang++.")
 	common_env.Replace(CXX = "clang++")
+	common_env.Program ('bin/bufferUnitTest', ['../Main/BufferTest/source/BufferQUnit.cc', catalogSrc, recordSrc, bufferSrc])
+
+if ans=="5":
+	print("\nOK, building record unit tests using clang++.")
+	common_env.Replace(CXX = "clang++")
 	common_env.Program ('bin/recordUnitTest', ['../Main/RecordTest/source/RecordQUnit.cc', tableSrc, recordSrc, catalogSrc, bufferSrc])
 
+if ans=="6":
+	print("\nOK, building sort unit tests using clang++.")
+	common_env.Replace(CXX = "clang++")
+	common_env.Program ('bin/sortUnitTest', ['../Main/SortTest/source/SortQUnit.cc', tableSrc, recordSrc, catalogSrc, bufferSrc])
 
